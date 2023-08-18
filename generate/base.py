@@ -17,6 +17,7 @@ from lit_gpt import GPT, Config, Tokenizer
 from lit_gpt.model import Block
 from lit_gpt.utils import check_valid_checkpoint_dir, get_default_supported_precision, lazy_load, quantization
 
+seed = 42
 
 @torch.no_grad()
 def generate(
@@ -165,7 +166,7 @@ def main(
         model.config.block_size,
     )  # maximum rope cache length
 
-    L.seed_everything(1234)
+    L.seed_everything(seed)
     for i in range(num_samples):
         t0 = time.perf_counter()
         y = generate(

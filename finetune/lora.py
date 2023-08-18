@@ -29,7 +29,7 @@ from scripts.prepare_alpaca import generate_prompt
 
 eval_interval = 100
 save_interval = 100
-eval_iters = 100
+eval_iters = 2000  #FIXME hardcoded eval dataset size 
 log_interval = 1
 devices = 1
 # change this value to force a maximum sequence length
@@ -41,7 +41,7 @@ batch_size = 128
 micro_batch_size = 4
 gradient_accumulation_iters = batch_size // micro_batch_size
 assert gradient_accumulation_iters > 0
-max_iters = 50000  # train dataset size
+max_iters = 27926  # train dataset size FIXME hardcoded
 weight_decay = 0.01
 lora_r = 8
 lora_alpha = 16
@@ -149,8 +149,8 @@ def train(
     fabric: L.Fabric,
     model: GPT,
     optimizer: torch.optim.Optimizer,
-    train_data: List[Dict],
-    val_data: List[Dict],
+    train_data: List,
+    val_data: List,
     checkpoint_dir: Path,
     out_dir: Path,
     speed_monitor: SpeedMonitor,
@@ -253,11 +253,10 @@ def validate(
         losses[k] = loss.item()
     val_loss = losses.mean()
 
+    #FIXME hardcoded for text-complete models
     # produce an example:
-    instruction = "Recommend a movie for me to watch during the weekend and explain the reason."
-    fabric.print(instruction)
-    sample = {"instruction": instruction, "input": ""}
-    prompt = generate_prompt(sample)
+    prompt = "Who's the coolest dude in school? : "
+    fabric.print(prompt)
     encoded = tokenizer.encode(prompt, device=fabric.device)
     max_returned_tokens = len(encoded) + 100
     output = generate(
@@ -303,7 +302,9 @@ def get_batch(
 
 def get_max_seq_length(data: List[Dict]) -> Tuple[int, int, int]:
     # find out the minimum max_seq_length required during fine-tuning (saves memory!)
-    lengths = [len(d["input_ids"]) for d in data]
+    print(f"type of data: {type(data)}")
+    print(f"type of data element: {type(data[0])}")
+    lengths = [len(d) for d in data]
     max_seq_length = max(lengths)
     longest_seq_ix = lengths.index(max_seq_length)
     # support easy override at the top of the file
